@@ -1,0 +1,3 @@
+bucket = "tech-challenge-terraform-state"
+key    = "infra-kubernetes/prod/terraform.tfstate"
+region = "us-east-1"
