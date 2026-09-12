@@ -1,0 +1,105 @@
+name: Deploy Prod
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      api_image_tag:
+        description: Tag da imagem no ECR
+        required: false
+        default: latest
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  TF_DIR: terraform/environments/prod
+  AWS_REGION: us-east-1
+  NAMESPACE: tech-challenge-namespace
+  API_IMAGE_TAG: ${{ github.event.inputs.api_image_tag || 'latest' }}
+
+jobs:
+  deploy:
+    name: Terraform apply + deploy K8s
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_api_image_tag: ${{ env.API_IMAGE_TAG }}
+          TF_VAR_mongo_url: ${{ secrets.MONGO_URL }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_seed_admin_password: ${{ secrets.SEED_ADMIN_PASSWORD }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Export Terraform outputs
+        id: tf
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "cluster_name=$(terraform output -raw cluster_name)" >> "$GITHUB_OUTPUT"
+          echo "api_ecr=$(terraform output -raw api_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "migrations_ecr=$(terraform output -raw migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - uses: azure/setup-kubectl@v4
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --name "${{ steps.tf.outputs.cluster_name }}" \
+            --region "${{ env.AWS_REGION }}"
+
+      - name: Prepare Kustomize overlay
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image \
+            tech-challenge-api=${{ steps.tf.outputs.api_ecr }}:${{ env.API_IMAGE_TAG }}
+          kustomize edit set image \
+            tech-challenge-api-migrations=${{ steps.tf.outputs.migrations_ecr }}:${{ env.API_IMAGE_TAG }}
+
+      - name: Deploy workloads (migrations antes da API)
+        run: ./scripts/deploy-k8s.sh
+
+      - name: Smoke test via ALB
+        run: |
+          ALB_HOST=""
+          for i in $(seq 1 30); do
+            ALB_HOST=$(kubectl get ingress api -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            if [ -n "$ALB_HOST" ]; then break; fi
+            echo "Aguardando ALB... ($i/30)"
+            sleep 10
+          done
+          if [ -z "$ALB_HOST" ]; then
+            kubectl describe ingress api -n "$NAMESPACE"
+            exit 1
+          fi
+          echo "ALB: http://$ALB_HOST"
+          curl -fsS "http://$ALB_HOST/health/live"
+          curl -fsS "http://$ALB_HOST/health/ready"
+
+      - name: Diagnóstico em caso de falha
+        if: failure()
+        run: |
+          kubectl get all -n "$NAMESPACE" || true
+          kubectl describe pods -n "$NAMESPACE" || true
+          kubectl logs -l app.kubernetes.io/name=api -n "$NAMESPACE" --all-containers --tail=100 || true
