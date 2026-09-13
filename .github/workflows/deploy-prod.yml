@@ -67,23 +67,78 @@ jobs:
           echo "api_ecr=$(terraform output -raw api_ecr_repository_url)" >> "$GITHUB_OUTPUT"
           echo "migrations_ecr=$(terraform output -raw migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
 
+      # O ECR e criado neste apply; as imagens so existem depois do Publish ECR
+      # do repositorio app. Sem essa checagem o Job de migration fica 5 minutos
+      # em ImagePullBackOff e o workflow falha mesmo com a infra pronta.
+      - name: Verificar imagens no ECR
+        id: images
+        env:
+          API_ECR: ${{ steps.tf.outputs.api_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.migrations_ecr }}
+        run: |
+          missing=0
+          for uri in "$API_ECR" "$MIGRATIONS_ECR"; do
+            repo="${uri##*/}"
+            if aws ecr describe-images \
+              --repository-name "$repo" \
+              --image-ids "imageTag=${API_IMAGE_TAG}" \
+              >/dev/null 2>&1; then
+              echo "Encontrada: ${repo}:${API_IMAGE_TAG}"
+            else
+              echo "Ausente: ${repo}:${API_IMAGE_TAG}"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Imagens ausentes no ECR"
+            echo
+            echo "O Terraform aplicou, mas \`${API_IMAGE_TAG}\` ainda nao existe em"
+            echo "\`tech-challenge-api\` e/ou \`tech-challenge-api-migrations\`."
+            echo
+            echo "Rode o workflow **Publish ECR** no repositorio \`app\` e depois:"
+            echo
+            echo '```bash'
+            echo "gh workflow run deploy-prod.yml \\"
+            echo "  --repo ${GITHUB_REPOSITORY} \\"
+            echo "  -f api_image_tag=<sha>"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "::error::Tag ${API_IMAGE_TAG} nao encontrada no ECR. Publique as imagens pelo Publish ECR do repositorio app."
+            exit 1
+          fi
+
+          echo "Push na infra sem imagens publicadas: workloads K8s serao pulados."
+
       - uses: azure/setup-kubectl@v4
+        if: steps.images.outputs.ready == 'true'
 
       # setup-kubectl instala apenas o kubectl. O subcomando `kustomize edit`
       # abaixo so existe no binario standalone.
       - name: Instalar kustomize
+        if: steps.images.outputs.ready == 'true'
         run: |
           curl -sS "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
       - name: Configure kubectl
+        if: steps.images.outputs.ready == 'true'
         run: |
           aws eks update-kubeconfig \
             --name "${{ steps.tf.outputs.cluster_name }}" \
             --region "${{ env.AWS_REGION }}"
 
       - name: Prepare Kustomize overlay
+        if: steps.images.outputs.ready == 'true'
         run: |
           cd k8s/overlays/prod
           kustomize edit set image \
@@ -92,9 +147,11 @@ jobs:
             tech-challenge-api-migrations=${{ steps.tf.outputs.migrations_ecr }}:${{ env.API_IMAGE_TAG }}
 
       - name: Deploy workloads (migrations antes da API)
+        if: steps.images.outputs.ready == 'true'
         run: ./scripts/deploy-k8s.sh
 
       - name: Smoke test via ALB
+        if: steps.images.outputs.ready == 'true'
         run: |
           ALB_HOST=""
           for i in $(seq 1 30); do
