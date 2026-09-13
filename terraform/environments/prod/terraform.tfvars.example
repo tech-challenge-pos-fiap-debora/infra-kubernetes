@@ -1,11 +1,11 @@
 aws_region          = "us-east-1"
 project_name        = "tech-challenge"
 environment         = "prod"
-kubernetes_version  = "1.29"
+kubernetes_version  = "1.33"
 node_desired_size   = 2
 node_min_size       = 1
 node_max_size       = 3
 api_image_tag       = "latest"
-mongo_url           = "mongodb://CHANGE_ME:27017/techChallenge"
+mongo_url           = "mongodb+srv://CHANGE_ME/techChallenge?retryWrites=true&w=majority"
 jwt_secret          = "CHANGE_ME"
 seed_admin_password = "CHANGE_ME"

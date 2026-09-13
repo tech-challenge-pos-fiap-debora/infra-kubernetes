@@ -29,7 +29,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.15.8"
           terraform_wrapper: false
 
       - name: Configure AWS credentials
@@ -42,7 +42,7 @@ jobs:
 
       - name: Terraform init
         working-directory: ${{ env.TF_DIR }}
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config=backend.hcl
 
       - name: Terraform apply
         working-directory: ${{ env.TF_DIR }}
@@ -62,6 +62,14 @@ jobs:
           echo "migrations_ecr=$(terraform output -raw migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
 
       - uses: azure/setup-kubectl@v4
+
+      # setup-kubectl instala apenas o kubectl. O subcomando `kustomize edit`
+      # abaixo so existe no binario standalone.
+      - name: Instalar kustomize
+        run: |
+          curl -sS "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
 
       - name: Configure kubectl
         run: |
@@ -96,6 +104,12 @@ jobs:
           echo "ALB: http://$ALB_HOST"
           curl -fsS "http://$ALB_HOST/health/live"
           curl -fsS "http://$ALB_HOST/health/ready"
+          {
+            echo "## API publicada"
+            echo
+            echo "- URL: http://$ALB_HOST"
+            echo "- Health: http://$ALB_HOST/health/live"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Diagnóstico em caso de falha
         if: failure()

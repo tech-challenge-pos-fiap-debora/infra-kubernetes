@@ -21,7 +21,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.15.8"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -33,7 +33,7 @@ jobs:
 
       - name: Terraform init
         working-directory: ${{ env.TF_DIR }}
-        run: terraform init -input=false -backend=false
+        run: terraform init -input=false -backend-config=backend.hcl
 
       - name: Terraform fmt check
         run: terraform fmt -check -recursive terraform/

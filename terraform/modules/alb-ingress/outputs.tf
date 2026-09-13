@@ -1,3 +1,3 @@
-output "alb_controller_role_arn" {
-  value = aws_iam_role.alb.arn
+output "service_account_name" {
+  value = kubernetes_service_account.alb.metadata[0].name
 }

@@ -50,14 +50,12 @@ module "platform" {
 module "alb_ingress" {
   source = "../../modules/alb-ingress"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  cluster_name      = module.eks.cluster_name
-  vpc_id            = module.vpc.vpc_id
-  oidc_provider_arn = module.eks.oidc_provider_arn
-  oidc_provider_url = module.eks.oidc_provider_url
-  aws_region        = var.aws_region
-  tags              = local.common_tags
+  project_name = var.project_name
+  environment  = var.environment
+  cluster_name = module.eks.cluster_name
+  vpc_id       = module.vpc.vpc_id
+  aws_region   = var.aws_region
+  tags         = local.common_tags
 
   depends_on = [module.eks, module.platform]
 }
