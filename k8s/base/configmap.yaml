@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  JWT_EXPIRES_IN: 1d
+  SEED_ADMIN_EMAIL: admin@local.dev
+  SEED_ADMIN_NAME: Admin
+  LOG_LEVEL: info
+  NEW_RELIC_APP_NAME: tech-challenge-api
+  NEW_RELIC_ENABLED: "true"

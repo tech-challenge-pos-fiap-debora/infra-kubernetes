@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tech-challenge-namespace
+
+resources:
+  - ../../base
+
+images:
+  - name: tech-challenge-api
+    newName: REPLACE_ECR_API_REPOSITORY
+    newTag: REPLACE_IMAGE_TAG
+  - name: tech-challenge-api-migrations
+    newName: REPLACE_ECR_MIGRATIONS_REPOSITORY
+    newTag: REPLACE_IMAGE_TAG

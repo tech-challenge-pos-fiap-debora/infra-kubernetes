@@ -1,0 +1,13 @@
+# Terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/errored.tfstate*
+**/terraform.tfvars
+**/crash.log
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
