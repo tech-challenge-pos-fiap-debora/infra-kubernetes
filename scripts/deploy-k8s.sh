@@ -43,8 +43,26 @@ for file in "${TMP}"/doc-*; do
   fi
 done
 
-if ! kubectl wait --for=condition=complete "job/api-migration" -n "${NAMESPACE}" --timeout=300s; then
+deadline=$((SECONDS + 300))
+completed=0
+while (( SECONDS < deadline )); do
+  if kubectl wait --for=condition=complete "job/api-migration" -n "${NAMESPACE}" --timeout=10s; then
+    completed=1
+    break
+  fi
+
+  reasons="$(kubectl get pods -n "${NAMESPACE}" -l job-name=api-migration \
+    -o jsonpath='{range .items[*].status.containerStatuses[*].state.waiting}{.reason}{"\n"}{end}' 2>/dev/null || true)"
+  if echo "${reasons}" | grep -qE 'ErrImagePull|ImagePullBackOff|InvalidImageName'; then
+    echo "Falha ao puxar a imagem do Job de migration." >&2
+    kubectl describe pods -n "${NAMESPACE}" -l job-name=api-migration || true
+    exit 1
+  fi
+done
+
+if [ "${completed}" -ne 1 ]; then
   kubectl logs job/api-migration -n "${NAMESPACE}" --all-containers || true
+  kubectl describe job api-migration -n "${NAMESPACE}" || true
   exit 1
 fi
 
