@@ -12,3 +12,6 @@ data:
   JWT_EXPIRES_IN: 1d
   SEED_ADMIN_EMAIL: admin@local.dev
   SEED_ADMIN_NAME: Admin
+  LOG_LEVEL: info
+  NEW_RELIC_APP_NAME: tech-challenge-api
+  NEW_RELIC_ENABLED: "true"

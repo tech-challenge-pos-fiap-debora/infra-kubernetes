@@ -21,3 +21,8 @@ output "namespace" {
 output "api_image_tag" {
   value = var.api_image_tag
 }
+
+output "newrelic_dashboard_url" {
+  description = "Link do dashboard de observabilidade, vazio quando desabilitada."
+  value       = length(module.observability) > 0 ? module.observability[0].dashboard_permalink : ""
+}

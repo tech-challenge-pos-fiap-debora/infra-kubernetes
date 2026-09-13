@@ -18,9 +18,10 @@ resource "kubernetes_secret" "api" {
   }
 
   data = {
-    MONGO_URL           = var.mongo_url
-    JWT_SECRET          = var.jwt_secret
-    SEED_ADMIN_PASSWORD = var.seed_admin_password
+    MONGO_URL             = var.mongo_url
+    JWT_SECRET            = var.jwt_secret
+    SEED_ADMIN_PASSWORD   = var.seed_admin_password
+    NEW_RELIC_LICENSE_KEY = var.new_relic_license_key
   }
 
   type = "Opaque"

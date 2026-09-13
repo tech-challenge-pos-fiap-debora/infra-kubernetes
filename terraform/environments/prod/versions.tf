@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.15"
     }
+    newrelic = {
+      source  = "newrelic/newrelic"
+      version = "~> 3.43"
+    }
   }
 
   backend "s3" {}

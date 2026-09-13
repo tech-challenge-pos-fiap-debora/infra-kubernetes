@@ -40,11 +40,29 @@ module "eks" {
 module "platform" {
   source = "../../modules/platform"
 
-  mongo_url           = var.mongo_url
-  jwt_secret          = var.jwt_secret
-  seed_admin_password = var.seed_admin_password
+  mongo_url             = var.mongo_url
+  jwt_secret            = var.jwt_secret
+  seed_admin_password   = var.seed_admin_password
+  new_relic_license_key = var.new_relic_license_key
 
   depends_on = [module.eks]
+}
+
+# Só é provisionado quando as chaves do New Relic estão configuradas, para que
+# o ambiente continue subindo sem observabilidade caso elas faltem.
+module "observability" {
+  source = "../../modules/observability"
+  count  = var.new_relic_api_key == "" ? 0 : 1
+
+  project_name          = var.project_name
+  environment           = var.environment
+  cluster_name          = module.eks.cluster_name
+  new_relic_account_id  = var.new_relic_account_id
+  new_relic_license_key = var.new_relic_license_key
+  alert_email           = var.alert_email
+  healthcheck_url       = var.healthcheck_url
+
+  depends_on = [module.eks, module.platform]
 }
 
 module "alb_ingress" {

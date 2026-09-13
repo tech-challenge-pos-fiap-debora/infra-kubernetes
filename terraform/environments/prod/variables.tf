@@ -62,3 +62,35 @@ variable "seed_admin_password" {
   type      = string
   sensitive = true
 }
+
+variable "new_relic_account_id" {
+  description = "Account ID do New Relic. Zero desabilita a observabilidade."
+  type        = number
+  default     = 0
+}
+
+variable "new_relic_api_key" {
+  description = "User API key (NRAK), usada pelo Terraform para criar dashboards e alertas."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "new_relic_license_key" {
+  description = "Ingest license key (NRAL), usada pelos agentes para enviar telemetria."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "alert_email" {
+  description = "E-mail que recebe as notificacoes de alerta."
+  type        = string
+  default     = ""
+}
+
+variable "healthcheck_url" {
+  description = "URL publica do healthcheck monitorada pelo synthetic."
+  type        = string
+  default     = ""
+}
