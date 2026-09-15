@@ -48,7 +48,7 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         env:
           TF_VAR_api_image_tag: ${{ env.API_IMAGE_TAG }}
-          TF_VAR_mongo_url: ${{ secrets.MONGO_URL }}
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_seed_admin_password: ${{ secrets.SEED_ADMIN_PASSWORD }}
           # Sem as chaves do New Relic o módulo de observabilidade não é criado.

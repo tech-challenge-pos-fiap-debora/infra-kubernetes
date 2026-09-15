@@ -40,7 +40,7 @@ module "eks" {
 module "platform" {
   source = "../../modules/platform"
 
-  mongo_url             = var.mongo_url
+  database_url          = var.database_url
   jwt_secret            = var.jwt_secret
   seed_admin_password   = var.seed_admin_password
   new_relic_license_key = var.new_relic_license_key

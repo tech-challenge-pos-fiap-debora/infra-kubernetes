@@ -6,6 +6,6 @@ node_desired_size   = 2
 node_min_size       = 1
 node_max_size       = 3
 api_image_tag       = "latest"
-mongo_url           = "mongodb+srv://CHANGE_ME/techChallenge?retryWrites=true&w=majority"
+database_url        = "postgresql://techchallenge:CHANGE_ME@tech-challenge-prod-pg.xxxxx.us-east-1.rds.amazonaws.com:5432/techchallenge"
 jwt_secret          = "CHANGE_ME"
 seed_admin_password = "CHANGE_ME"

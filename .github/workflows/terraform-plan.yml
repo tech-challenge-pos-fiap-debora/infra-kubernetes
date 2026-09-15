@@ -45,7 +45,7 @@ jobs:
       - name: Terraform plan
         working-directory: ${{ env.TF_DIR }}
         env:
-          TF_VAR_mongo_url: ${{ secrets.MONGO_URL }}
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_seed_admin_password: ${{ secrets.SEED_ADMIN_PASSWORD }}
           TF_VAR_new_relic_account_id: ${{ secrets.NEW_RELIC_ACCOUNT_ID || '0' }}

@@ -3,7 +3,7 @@ variable "namespace" {
   default = "tech-challenge-namespace"
 }
 
-variable "mongo_url" {
+variable "database_url" {
   type      = string
   sensitive = true
 }
