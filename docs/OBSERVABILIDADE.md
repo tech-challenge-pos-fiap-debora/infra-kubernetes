@@ -174,4 +174,6 @@ no-op. Isso mantém o ambiente reprovisionável mesmo sem as chaves.
 4. Copie o `x-request-id` devolvido em qualquer resposta e busque por ele em
    *Logs*; a partir do log, abra o trace correspondente.
 5. Verifique o dashboard *Tech Challenge - Oficina Mecanica (prod)*, criado
-   pelo Terraform. O link sai no output `newrelic_dashboard_url`.
+   pelo Terraform. Link atual:
+   https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5
+   (`terraform output -raw newrelic_dashboard_url` se o permalink mudar).

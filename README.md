@@ -78,9 +78,15 @@ flowchart TB
 
 Visão completa: [componentes-nuvem](https://github.com/tech-challenge-pos-fiap-debora/app/blob/main/docs/diagrams/componentes-nuvem.md).
 
+## Deploys ativos (produção)
+
+| O quê | URL |
+|---|---|
+| API (ALB) | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com |
+| Swagger | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com/api |
+| Health | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com/health/live |
+| Dashboard New Relic | https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5 |
+
 ## APIs
 
-Este repo não expõe REST próprio. A API publicada no Ingress é a do `app`:
-
-- Swagger: `http://<dns-do-alb>/api`
-- Health: `http://<dns-do-alb>/health/live`
+Este repo não expõe REST próprio. A API publicada no Ingress é a do `app`. Detalhe operacional: [`docs/OBSERVABILIDADE.md`](docs/OBSERVABILIDADE.md).
