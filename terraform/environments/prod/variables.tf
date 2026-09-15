@@ -48,7 +48,7 @@ variable "api_image_tag" {
   default = "latest"
 }
 
-variable "mongo_url" {
+variable "database_url" {
   type      = string
   sensitive = true
 }
