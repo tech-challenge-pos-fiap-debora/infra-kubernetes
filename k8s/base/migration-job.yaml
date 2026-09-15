@@ -21,8 +21,8 @@ spec:
           image: tech-challenge-api-migrations:latest
           imagePullPolicy: Always
           command:
-            - yarn
-            - migrate:up
+            - node
+            - scripts/run-migrations.mjs
           envFrom:
             - configMapRef:
                 name: api-config

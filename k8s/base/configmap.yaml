@@ -13,5 +13,6 @@ data:
   SEED_ADMIN_EMAIL: admin@local.dev
   SEED_ADMIN_NAME: Admin
   LOG_LEVEL: info
+  PGSSL: "true"
   NEW_RELIC_APP_NAME: tech-challenge-api
   NEW_RELIC_ENABLED: "true"
