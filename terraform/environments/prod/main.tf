@@ -11,6 +11,7 @@ module "vpc" {
   project_name       = var.project_name
   environment        = var.environment
   availability_zones = var.availability_zones
+  cluster_name       = "${var.project_name}-${var.environment}-eks"
   tags               = local.common_tags
 }
 

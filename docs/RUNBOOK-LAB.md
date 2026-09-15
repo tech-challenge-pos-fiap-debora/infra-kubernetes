@@ -197,4 +197,16 @@ Reinicie o lab, sincronize credenciais e recupere `errored.tfstate` se necessár
 
 **Lambda/API não alcançam o RDS.** Confirme security group `tech-challenge-prod-rds-sg` (5432 do CIDR `10.0.0.0/16`) e que `DATABASE_URL` aponta para o endpoint privado, não público.
 
+**Ingress sem hostname / ALB não sobe.** Veja o evento do Ingress:
+
+```bash
+kubectl describe ingress api -n tech-challenge-namespace
+kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=50
+```
+
+| Evento | Causa | Fix |
+|--------|-------|-----|
+| `NoCredentialProviders` | Pods não alcançam IMDS do nó (hop limit 1) | `terraform apply` com launch template `http_put_response_hop_limit = 2` no módulo EKS |
+| `unable to find suitable subnets` | Subnets sem tag de cluster | `terraform apply` com tag `kubernetes.io/cluster/tech-challenge-prod-eks=shared` |
+
 **`kustomize: command not found` no workflow.** O `deploy-prod.yml` já instala o binário standalone.

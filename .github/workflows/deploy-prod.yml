@@ -161,7 +161,12 @@ jobs:
             sleep 10
           done
           if [ -z "$ALB_HOST" ]; then
-            kubectl describe ingress api -n "$NAMESPACE"
+            echo "::error::Ingress sem hostname após 5 min — ALB não foi provisionado."
+            kubectl get ingress api -n "$NAMESPACE" -o wide || true
+            kubectl describe ingress api -n "$NAMESPACE" || true
+            kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller || true
+            kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=80 || true
+            echo "Causas comuns: NoCredentialProviders (IMDS hop limit nos nodes) ou subnets sem tag de cluster — veja RUNBOOK-LAB.md."
             exit 1
           fi
           echo "ALB: http://$ALB_HOST"
@@ -178,5 +183,9 @@ jobs:
         if: failure()
         run: |
           kubectl get all -n "$NAMESPACE" || true
+          kubectl get ingress -n "$NAMESPACE" -o wide || true
+          kubectl describe ingress api -n "$NAMESPACE" || true
           kubectl describe pods -n "$NAMESPACE" || true
           kubectl logs -l app.kubernetes.io/name=api -n "$NAMESPACE" --all-containers --tail=100 || true
+          kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller || true
+          kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=100 || true

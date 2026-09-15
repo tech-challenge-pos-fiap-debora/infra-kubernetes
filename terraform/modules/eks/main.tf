@@ -46,12 +46,40 @@ resource "aws_eks_cluster" "this" {
   tags = local.common_tags
 }
 
+# Sem IRSA no Learner Lab, o ALB Controller obtém credenciais via IMDS do nó.
+# Hop limit 1 (padrão) bloqueia pods; precisa ser 2 para o controller criar ALBs.
+resource "aws_launch_template" "nodes" {
+  name_prefix = "${local.name}-ng-"
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"
+    http_put_response_hop_limit = 2
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(local.common_tags, {
+      Name = "${local.name}-ng"
+    })
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_eks_node_group" "this" {
   cluster_name    = aws_eks_cluster.this.name
   node_group_name = "${local.name}-ng"
   node_role_arn   = data.aws_iam_role.lab.arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.node_instance_types
+
+  launch_template {
+    id      = aws_launch_template.nodes.id
+    version = aws_launch_template.nodes.latest_version
+  }
 
   scaling_config {
     desired_size = var.node_desired_size

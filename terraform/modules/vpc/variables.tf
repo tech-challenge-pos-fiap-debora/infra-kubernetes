@@ -19,3 +19,8 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+# Necessário para o AWS Load Balancer Controller descobrir subnets do ALB.
+variable "cluster_name" {
+  type = string
+}
