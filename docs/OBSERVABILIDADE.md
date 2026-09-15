@@ -1,7 +1,14 @@
 # Observabilidade — New Relic
 
-Documento de referência da stack de monitoramento do Tech Challenge. Cobre o
-que foi instrumentado, onde cada peça vive e como validar que está funcionando.
+A evidência do enunciado **não é este arquivo**. Abra a conta New Relic:
+
+1. Dashboard [Tech Challenge - Oficina Mecanica (prod)](https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5) — volume de OS, latência, Kubernetes
+2. **APM & Services** → `tech-challenge-api` (traces da API)
+3. **Logs** → `correlationId` = header `x-request-id` da resposta
+4. **Infrastructure → Kubernetes** → cluster `tech-challenge-prod-eks`
+5. Lambda `tech-challenge-lambda-auth` em APM ou Serverless (depois de um login por CPF)
+
+O restante deste documento explica *como* a telemetria foi ligada (agents, NRQL, alertas).
 
 ## Por que New Relic
 
@@ -124,7 +131,7 @@ WHERE appName = 'tech-challenge-api' TIMESERIES
 
 -- Consumo de CPU por pod
 SELECT average(cpuUsedCores) FROM K8sContainerSample
-WHERE clusterName = 'tech-challenge-prod' FACET podName TIMESERIES
+WHERE clusterName = 'tech-challenge-prod-eks' FACET podName TIMESERIES
 
 -- Rastrear uma requisição específica de ponta a ponta
 SELECT timestamp, level, message FROM Log
