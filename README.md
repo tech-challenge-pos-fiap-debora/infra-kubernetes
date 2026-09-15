@@ -1,5 +1,9 @@
 # infra-kubernetes — cluster e runtime da API
 
+Terraform do Kubernetes da Fase 3: VPC, EKS (`tech-challenge-prod-eks`), ECR, ALB, HPA e New Relic.
+
+Mapa da entrega: [arquitetura no `app`](https://github.com/tech-challenge-pos-fiap-debora/app/blob/main/docs/arquitetura.md). Monitoramento ao vivo: [dashboard New Relic](https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5).
+
 ## Propósito
 
 Provisiona a infraestrutura Kubernetes da oficina na AWS: VPC, EKS, ECR, ALB Ingress, namespace, secrets da API, Metrics Server, HPA e o módulo New Relic. É o repositório de Terraform do cluster exigido pelo Tech Challenge.
@@ -39,7 +43,7 @@ terraform -chdir=terraform/environments/prod apply
 Deploy dos manifests (migrations e depois a API):
 
 ```bash
-aws eks update-kubeconfig --name tech-challenge-prod --region us-east-1
+aws eks update-kubeconfig --name tech-challenge-prod-eks --region us-east-1
 ./scripts/deploy-k8s.sh
 ```
 
@@ -78,9 +82,17 @@ flowchart TB
 
 Visão completa: [componentes-nuvem](https://github.com/tech-challenge-pos-fiap-debora/app/blob/main/docs/diagrams/componentes-nuvem.md).
 
+## Deploys ativos (produção)
+
+| O quê | URL |
+|---|---|
+| API (ALB) | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com |
+| Swagger | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com/api |
+| Health | http://k8s-techchal-api-3be88fc582-917637512.us-east-1.elb.amazonaws.com/health/live |
+| Dashboard New Relic | https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5 |
+
 ## APIs
 
-Este repo não expõe REST próprio. A API publicada no Ingress é a do `app`:
+Este repo não expõe REST próprio. A API publicada no Ingress é a do `app`.
 
-- Swagger: `http://<dns-do-alb>/api`
-- Health: `http://<dns-do-alb>/health/live`
+Monitoramento ao vivo: [dashboard New Relic](https://one.newrelic.com/redirect/entity/ODUwODAzNnxWSVp8REFTSEJPQVJEfGRhOjEzMTY1ODM5). Como a stack foi montada: [`docs/OBSERVABILIDADE.md`](docs/OBSERVABILIDADE.md).
