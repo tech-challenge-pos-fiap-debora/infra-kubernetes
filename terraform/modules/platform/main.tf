@@ -74,10 +74,11 @@ locals {
   }
 }
 
+# for_each só com nomes (não sensitive). enabled deriva de URLs sensitive.
 resource "kubernetes_secret" "microservice" {
-  for_each = {
-    for name, cfg in local.ms_secrets : name => cfg if cfg.enabled
-  }
+  for_each = toset(nonsensitive([
+    for name, cfg in local.ms_secrets : name if cfg.enabled
+  ]))
 
   metadata {
     name      = "${each.key}-secret"
@@ -89,7 +90,7 @@ resource "kubernetes_secret" "microservice" {
     }
   }
 
-  data = each.value.data
+  data = local.ms_secrets[each.key].data
   type = "Opaque"
 
   depends_on = [kubernetes_namespace.app]
