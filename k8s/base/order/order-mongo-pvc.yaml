@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: order-mongo-data
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: order-mongo
+    app.kubernetes.io/component: order-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

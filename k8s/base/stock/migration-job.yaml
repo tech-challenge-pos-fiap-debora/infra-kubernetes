@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stock-migration
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: stock-migration
+    app.kubernetes.io/component: stock-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stock-migration
+        app.kubernetes.io/component: stock-service
+        app.kubernetes.io/part-of: tech-challenge-pos-fiap
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: stock-service:migrations
+          imagePullPolicy: Always
+          command:
+            - node
+            - scripts/run-migrations.mjs
+          envFrom:
+            - configMapRef:
+                name: stock-config
+            - secretRef:
+                name: stock-secret

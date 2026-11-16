@@ -8,6 +8,14 @@ locals {
   repositories = [
     "tech-challenge-api",
     "tech-challenge-api-migrations",
+    "billing-service",
+    "billing-service-migrations",
+    "stock-service",
+    "stock-service-migrations",
+    "identity-service",
+    "identity-service-migrations",
+    "order-service",
+    "order-service-seed",
   ]
 }
 

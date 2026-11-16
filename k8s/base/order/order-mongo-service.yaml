@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-mongo
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: order-mongo
+    app.kubernetes.io/component: order-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+spec:
+  selector:
+    app.kubernetes.io/name: order-mongo
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: mongo

@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: identity
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: identity
+    app.kubernetes.io/component: identity-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health/live
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/group.name: tech-challenge
+    alb.ingress.kubernetes.io/group.order: "11"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /identity
+            pathType: Prefix
+            backend:
+              service:
+                name: identity
+                port:
+                  number: 80

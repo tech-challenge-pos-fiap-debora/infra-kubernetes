@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: order
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: order
+    app.kubernetes.io/component: order-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health/live
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/group.name: tech-challenge
+    alb.ingress.kubernetes.io/group.order: "12"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: order
+                port:
+                  number: 80

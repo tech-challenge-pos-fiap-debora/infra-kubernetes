@@ -5,8 +5,36 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      service:
+        description: "Serviço (api|billing-service|stock-service|identity-service|order-service|all)"
+        required: false
+        default: all
       api_image_tag:
-        description: Tag da imagem no ECR
+        description: Tag da API monolito
+        required: false
+        default: latest
+      billing_image_tag:
+        required: false
+        default: latest
+      billing_migrations_image_tag:
+        required: false
+        default: latest
+      stock_image_tag:
+        required: false
+        default: latest
+      stock_migrations_image_tag:
+        required: false
+        default: latest
+      identity_image_tag:
+        required: false
+        default: latest
+      identity_migrations_image_tag:
+        required: false
+        default: latest
+      order_image_tag:
+        required: false
+        default: latest
+      order_seed_image_tag:
         required: false
         default: latest
 
@@ -18,7 +46,16 @@ env:
   TF_DIR: terraform/environments/prod
   AWS_REGION: us-east-1
   NAMESPACE: tech-challenge-namespace
+  DEPLOY_SERVICE: ${{ github.event.inputs.service || 'all' }}
   API_IMAGE_TAG: ${{ github.event.inputs.api_image_tag || 'latest' }}
+  BILLING_IMAGE_TAG: ${{ github.event.inputs.billing_image_tag || 'latest' }}
+  BILLING_MIGRATIONS_IMAGE_TAG: ${{ github.event.inputs.billing_migrations_image_tag || github.event.inputs.billing_image_tag || 'latest' }}
+  STOCK_IMAGE_TAG: ${{ github.event.inputs.stock_image_tag || 'latest' }}
+  STOCK_MIGRATIONS_IMAGE_TAG: ${{ github.event.inputs.stock_migrations_image_tag || github.event.inputs.stock_image_tag || 'latest' }}
+  IDENTITY_IMAGE_TAG: ${{ github.event.inputs.identity_image_tag || 'latest' }}
+  IDENTITY_MIGRATIONS_IMAGE_TAG: ${{ github.event.inputs.identity_migrations_image_tag || github.event.inputs.identity_image_tag || 'latest' }}
+  ORDER_IMAGE_TAG: ${{ github.event.inputs.order_image_tag || 'latest' }}
+  ORDER_SEED_IMAGE_TAG: ${{ github.event.inputs.order_seed_image_tag || github.event.inputs.order_image_tag || 'latest' }}
 
 jobs:
   deploy:
@@ -40,7 +77,6 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # O bucket do state deriva do ID da conta, que muda a cada lab novo.
       - name: Terraform init
         run: ./scripts/tf-init.sh
 
@@ -48,10 +84,21 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         env:
           TF_VAR_api_image_tag: ${{ env.API_IMAGE_TAG }}
+          TF_VAR_billing_image_tag: ${{ env.BILLING_IMAGE_TAG }}
+          TF_VAR_billing_migrations_image_tag: ${{ env.BILLING_MIGRATIONS_IMAGE_TAG }}
+          TF_VAR_stock_image_tag: ${{ env.STOCK_IMAGE_TAG }}
+          TF_VAR_stock_migrations_image_tag: ${{ env.STOCK_MIGRATIONS_IMAGE_TAG }}
+          TF_VAR_identity_image_tag: ${{ env.IDENTITY_IMAGE_TAG }}
+          TF_VAR_identity_migrations_image_tag: ${{ env.IDENTITY_MIGRATIONS_IMAGE_TAG }}
+          TF_VAR_order_image_tag: ${{ env.ORDER_IMAGE_TAG }}
+          TF_VAR_order_seed_image_tag: ${{ env.ORDER_SEED_IMAGE_TAG }}
           TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_billing_database_url: ${{ secrets.BILLING_DATABASE_URL }}
+          TF_VAR_stock_database_url: ${{ secrets.STOCK_DATABASE_URL }}
+          TF_VAR_identity_database_url: ${{ secrets.IDENTITY_DATABASE_URL }}
+          TF_VAR_order_mongodb_uri: ${{ secrets.ORDER_MONGODB_URI }}
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_seed_admin_password: ${{ secrets.SEED_ADMIN_PASSWORD }}
-          # Sem as chaves do New Relic o módulo de observabilidade não é criado.
           TF_VAR_new_relic_account_id: ${{ secrets.NEW_RELIC_ACCOUNT_ID || '0' }}
           TF_VAR_new_relic_api_key: ${{ secrets.NEW_RELIC_API_KEY }}
           TF_VAR_new_relic_license_key: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
@@ -66,126 +113,110 @@ jobs:
           echo "cluster_name=$(terraform output -raw cluster_name)" >> "$GITHUB_OUTPUT"
           echo "api_ecr=$(terraform output -raw api_ecr_repository_url)" >> "$GITHUB_OUTPUT"
           echo "migrations_ecr=$(terraform output -raw migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
-
-      # O ECR e criado neste apply; as imagens so existem depois do Publish ECR
-      # do repositorio app. Sem essa checagem o Job de migration fica 5 minutos
-      # em ImagePullBackOff e o workflow falha mesmo com a infra pronta.
-      - name: Verificar imagens no ECR
-        id: images
-        env:
-          API_ECR: ${{ steps.tf.outputs.api_ecr }}
-          MIGRATIONS_ECR: ${{ steps.tf.outputs.migrations_ecr }}
-        run: |
-          missing=0
-          for uri in "$API_ECR" "$MIGRATIONS_ECR"; do
-            repo="${uri##*/}"
-            if aws ecr describe-images \
-              --repository-name "$repo" \
-              --image-ids "imageTag=${API_IMAGE_TAG}" \
-              >/dev/null 2>&1; then
-              echo "Encontrada: ${repo}:${API_IMAGE_TAG}"
-            else
-              echo "Ausente: ${repo}:${API_IMAGE_TAG}"
-              missing=1
-            fi
-          done
-
-          if [ "$missing" -eq 0 ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "ready=false" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Imagens ausentes no ECR"
-            echo
-            echo "O Terraform aplicou, mas \`${API_IMAGE_TAG}\` ainda nao existe em"
-            echo "\`tech-challenge-api\` e/ou \`tech-challenge-api-migrations\`."
-            echo
-            echo "Rode o workflow **Publish ECR** no repositorio \`app\` e depois:"
-            echo
-            echo '```bash'
-            echo "gh workflow run deploy-prod.yml \\"
-            echo "  --repo ${GITHUB_REPOSITORY} \\"
-            echo "  -f api_image_tag=<sha>"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            echo "::error::Tag ${API_IMAGE_TAG} nao encontrada no ECR. Publique as imagens pelo Publish ECR do repositorio app."
-            exit 1
-          fi
-
-          echo "Push na infra sem imagens publicadas: workloads K8s serao pulados."
+          echo "billing_ecr=$(terraform output -raw billing_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "billing_migrations_ecr=$(terraform output -raw billing_migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "stock_ecr=$(terraform output -raw stock_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "stock_migrations_ecr=$(terraform output -raw stock_migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "identity_ecr=$(terraform output -raw identity_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "identity_migrations_ecr=$(terraform output -raw identity_migrations_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "order_ecr=$(terraform output -raw order_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+          echo "order_seed_ecr=$(terraform output -raw order_seed_ecr_repository_url)" >> "$GITHUB_OUTPUT"
 
       - uses: azure/setup-kubectl@v4
-        if: steps.images.outputs.ready == 'true'
-
-      # setup-kubectl instala apenas o kubectl. O subcomando `kustomize edit`
-      # abaixo so existe no binario standalone.
       - name: Instalar kustomize
-        if: steps.images.outputs.ready == 'true'
         run: |
           curl -sS "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
-          kustomize version
-
       - name: Configure kubectl
-        if: steps.images.outputs.ready == 'true'
         run: |
           aws eks update-kubeconfig \
             --name "${{ steps.tf.outputs.cluster_name }}" \
             --region "${{ env.AWS_REGION }}"
 
-      - name: Prepare Kustomize overlay
-        if: steps.images.outputs.ready == 'true'
+      # Monolito legado: só com service=api explícito (all = 4 MS).
+      - name: Deploy API (monolito)
+        if: env.DEPLOY_SERVICE == 'api'
+        env:
+          API_ECR: ${{ steps.tf.outputs.api_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.migrations_ecr }}
         run: |
-          cd k8s/overlays/prod
-          kustomize edit set image \
-            tech-challenge-api=${{ steps.tf.outputs.api_ecr }}:${{ env.API_IMAGE_TAG }}
-          kustomize edit set image \
-            tech-challenge-api-migrations=${{ steps.tf.outputs.migrations_ecr }}:${{ env.API_IMAGE_TAG }}
-
-      - name: Deploy workloads (migrations antes da API)
-        if: steps.images.outputs.ready == 'true'
-        run: ./scripts/deploy-k8s.sh
-
-      - name: Smoke test via ALB
-        if: steps.images.outputs.ready == 'true'
-        run: |
-          ALB_HOST=""
-          for i in $(seq 1 30); do
-            ALB_HOST=$(kubectl get ingress api -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-            if [ -n "$ALB_HOST" ]; then break; fi
-            echo "Aguardando ALB... ($i/30)"
-            sleep 10
-          done
-          if [ -z "$ALB_HOST" ]; then
-            echo "::error::Ingress sem hostname após 5 min — ALB não foi provisionado."
-            kubectl get ingress api -n "$NAMESPACE" -o wide || true
-            kubectl describe ingress api -n "$NAMESPACE" || true
-            kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller || true
-            kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=80 || true
-            echo "Causas comuns: NoCredentialProviders (IMDS hop limit nos nodes) ou subnets sem tag de cluster — veja RUNBOOK-LAB.md."
-            exit 1
+          if ! aws ecr describe-images --repository-name "${API_ECR##*/}" --image-ids "imageTag=${API_IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "API image ausente; pulando."
+            exit 0
           fi
-          echo "ALB: http://$ALB_HOST"
-          curl -fsS "http://$ALB_HOST/health/live"
-          curl -fsS "http://$ALB_HOST/health/ready"
-          {
-            echo "## API publicada"
-            echo
-            echo "- URL: http://$ALB_HOST"
-            echo "- Health: http://$ALB_HOST/health/live"
-          } >> "$GITHUB_STEP_SUMMARY"
+          cd k8s/overlays/prod
+          kustomize edit set image "tech-challenge-api=${API_ECR}:${API_IMAGE_TAG}"
+          kustomize edit set image "tech-challenge-api-migrations=${MIGRATIONS_ECR}:${API_IMAGE_TAG}"
+          cd ../../..
+          ./scripts/deploy-k8s.sh
+
+      - name: Deploy billing-service
+        if: env.DEPLOY_SERVICE == 'all' || env.DEPLOY_SERVICE == 'billing-service'
+        env:
+          ECR: ${{ steps.tf.outputs.billing_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.billing_migrations_ecr }}
+        run: |
+          if ! aws ecr describe-images --repository-name "${ECR##*/}" --image-ids "imageTag=${BILLING_IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "billing image ausente; pulando."
+            exit 0
+          fi
+          cd k8s/overlays/prod-billing
+          kustomize edit set image "billing-service=${ECR}:${BILLING_IMAGE_TAG}"
+          kustomize edit set image "billing-service-migrations=${MIGRATIONS_ECR}:${BILLING_MIGRATIONS_IMAGE_TAG}"
+          cd ../../..
+          ./scripts/deploy-microservice.sh billing billing-migration billing
+
+      - name: Deploy stock-service
+        if: env.DEPLOY_SERVICE == 'all' || env.DEPLOY_SERVICE == 'stock-service'
+        env:
+          ECR: ${{ steps.tf.outputs.stock_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.stock_migrations_ecr }}
+        run: |
+          if ! aws ecr describe-images --repository-name "${ECR##*/}" --image-ids "imageTag=${STOCK_IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "stock image ausente; pulando."
+            exit 0
+          fi
+          cd k8s/overlays/prod-stock
+          kustomize edit set image "stock-service=${ECR}:${STOCK_IMAGE_TAG}"
+          kustomize edit set image "stock-service-migrations=${MIGRATIONS_ECR}:${STOCK_MIGRATIONS_IMAGE_TAG}"
+          cd ../../..
+          ./scripts/deploy-microservice.sh stock stock-migration stock
+
+      - name: Deploy identity-service
+        if: env.DEPLOY_SERVICE == 'all' || env.DEPLOY_SERVICE == 'identity-service'
+        env:
+          ECR: ${{ steps.tf.outputs.identity_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.identity_migrations_ecr }}
+        run: |
+          if ! aws ecr describe-images --repository-name "${ECR##*/}" --image-ids "imageTag=${IDENTITY_IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "identity image ausente; pulando."
+            exit 0
+          fi
+          cd k8s/overlays/prod-identity
+          kustomize edit set image "identity-service=${ECR}:${IDENTITY_IMAGE_TAG}"
+          kustomize edit set image "identity-service-migrations=${MIGRATIONS_ECR}:${IDENTITY_MIGRATIONS_IMAGE_TAG}"
+          cd ../../..
+          ./scripts/deploy-microservice.sh identity identity-migration identity
+
+      - name: Deploy order-service
+        if: env.DEPLOY_SERVICE == 'all' || env.DEPLOY_SERVICE == 'order-service'
+        env:
+          ECR: ${{ steps.tf.outputs.order_ecr }}
+          SEED_ECR: ${{ steps.tf.outputs.order_seed_ecr }}
+        run: |
+          if ! aws ecr describe-images --repository-name "${ECR##*/}" --image-ids "imageTag=${ORDER_IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "order image ausente; pulando."
+            exit 0
+          fi
+          cd k8s/overlays/prod-order
+          kustomize edit set image "order-service=${ECR}:${ORDER_IMAGE_TAG}"
+          kustomize edit set image "order-service-seed=${SEED_ECR}:${ORDER_SEED_IMAGE_TAG}"
+          cd ../../..
+          ./scripts/deploy-microservice.sh order order-seed order
 
       - name: Diagnóstico em caso de falha
         if: failure()
         run: |
           kubectl get all -n "$NAMESPACE" || true
           kubectl get ingress -n "$NAMESPACE" -o wide || true
-          kubectl describe ingress api -n "$NAMESPACE" || true
           kubectl describe pods -n "$NAMESPACE" || true
-          kubectl logs -l app.kubernetes.io/name=api -n "$NAMESPACE" --all-containers --tail=100 || true
-          kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller || true
-          kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller --tail=100 || true

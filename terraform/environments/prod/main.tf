@@ -38,13 +38,29 @@ module "eks" {
   tags                = local.common_tags
 }
 
+module "messaging" {
+  source = "../../modules/messaging"
+
+  project_name = var.project_name
+  environment  = var.environment
+  tags         = local.common_tags
+}
+
 module "platform" {
   source = "../../modules/platform"
 
   database_url          = var.database_url
+  billing_database_url  = var.billing_database_url
+  stock_database_url    = var.stock_database_url
+  identity_database_url = var.identity_database_url
+  order_mongodb_uri     = var.order_mongodb_uri
   jwt_secret            = var.jwt_secret
   seed_admin_password   = var.seed_admin_password
   new_relic_license_key = var.new_relic_license_key
+  sns_topic_arn         = module.messaging.sns_topic_arn
+  order_queue_url       = module.messaging.order_queue_url
+  stock_queue_url       = module.messaging.stock_queue_url
+  billing_queue_url     = module.messaging.billing_queue_url
 
   depends_on = [module.eks]
 }

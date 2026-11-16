@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-config
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: order
+    app.kubernetes.io/component: order-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  SERVICE_NAME: order-service
+  MONGODB_DB: order
+  JWT_EXPIRES_IN: "1d"
+  IDENTITY_SERVICE_URL: http://identity.tech-challenge-namespace.svc.cluster.local
+  STOCK_SERVICE_URL: http://stock.tech-challenge-namespace.svc.cluster.local
+  BILLING_SERVICE_URL: http://billing.tech-challenge-namespace.svc.cluster.local
+  AWS_REGION: us-east-1
+  HTTP_PATH_PREFIX: /order
+  NEW_RELIC_APP_NAME: order-service
+  NEW_RELIC_LABELS: service:order-service;component:order
+  NEW_RELIC_ENABLED: "true"
