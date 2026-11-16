@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: identity
+    app.kubernetes.io/component: identity-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: identity
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

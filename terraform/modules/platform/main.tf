@@ -29,8 +29,6 @@ resource "kubernetes_secret" "api" {
   depends_on = [kubernetes_namespace.app]
 }
 
-<<<<<<< Updated upstream
-=======
 locals {
   ms_secrets = {
     billing = {
@@ -97,7 +95,6 @@ resource "kubernetes_secret" "microservice" {
   depends_on = [kubernetes_namespace.app]
 }
 
->>>>>>> Stashed changes
 resource "helm_release" "metrics_server" {
   name       = "metrics-server"
   repository = "https://kubernetes-sigs.github.io/metrics-server/"

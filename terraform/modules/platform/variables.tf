@@ -24,8 +24,6 @@ variable "new_relic_license_key" {
   sensitive   = true
   default     = ""
 }
-<<<<<<< Updated upstream
-=======
 
 variable "billing_database_url" {
   description = "DATABASE_URL do billing-service (RDS, database billing). Vazio pula o secret."
@@ -75,4 +73,3 @@ variable "billing_queue_url" {
   type    = string
   default = ""
 }
->>>>>>> Stashed changes

@@ -53,6 +53,74 @@ variable "database_url" {
   sensitive = true
 }
 
+variable "billing_database_url" {
+  description = "URL do Postgres do billing-service (database billing no RDS)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stock_database_url" {
+  description = "URL do Postgres do stock-service (database stock no RDS)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "identity_database_url" {
+  description = "URL do Postgres do identity-service (database identity no RDS)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "order_mongodb_uri" {
+  description = "URI Mongo do order-service (padrão: mongo in-cluster)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "billing_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "billing_migrations_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "stock_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "stock_migrations_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "identity_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "identity_migrations_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "order_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "order_seed_image_tag" {
+  type    = string
+  default = "latest"
+}
+
 variable "jwt_secret" {
   type      = string
   sensitive = true

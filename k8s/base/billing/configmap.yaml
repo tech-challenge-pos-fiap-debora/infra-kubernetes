@@ -19,6 +19,3 @@ data:
   STOCK_SERVICE_URL: http://stock.tech-challenge-namespace.svc.cluster.local
   AWS_REGION: us-east-1
   HTTP_PATH_PREFIX: /billing
-  MP_SANDBOX: "true"
-  MP_STATEMENT_DESCRIPTOR: OFICINA
-  # MP_NOTIFICATION_URL / back_urls: set via secret or overlay

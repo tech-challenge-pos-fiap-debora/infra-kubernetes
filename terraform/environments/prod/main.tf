@@ -50,11 +50,6 @@ module "platform" {
   source = "../../modules/platform"
 
   database_url          = var.database_url
-<<<<<<< Updated upstream
-  jwt_secret            = var.jwt_secret
-  seed_admin_password   = var.seed_admin_password
-  new_relic_license_key = var.new_relic_license_key
-=======
   billing_database_url  = var.billing_database_url
   stock_database_url    = var.stock_database_url
   identity_database_url = var.identity_database_url
@@ -66,7 +61,6 @@ module "platform" {
   order_queue_url       = module.messaging.order_queue_url
   stock_queue_url       = module.messaging.stock_queue_url
   billing_queue_url     = module.messaging.billing_queue_url
->>>>>>> Stashed changes
 
   depends_on = [module.eks]
 }

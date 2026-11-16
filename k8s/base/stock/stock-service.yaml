@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: stock
+    app.kubernetes.io/component: stock-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: stock
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
