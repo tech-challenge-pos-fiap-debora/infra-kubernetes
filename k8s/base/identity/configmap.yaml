@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: identity-config
+  namespace: tech-challenge-namespace
+  labels:
+    app.kubernetes.io/name: identity
+    app.kubernetes.io/component: identity-service
+    app.kubernetes.io/part-of: tech-challenge-pos-fiap
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  SERVICE_NAME: identity-service
+  JWT_EXPIRES_IN: "1d"
+  NEW_RELIC_APP_NAME: identity-service
+  NEW_RELIC_LABELS: service:identity-service;component:identity
+  NEW_RELIC_ENABLED: "true"
+  PGSSL: "true"
+  AWS_REGION: us-east-1
+  HTTP_PATH_PREFIX: /identity

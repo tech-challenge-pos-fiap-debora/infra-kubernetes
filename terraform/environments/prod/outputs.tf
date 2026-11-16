@@ -26,3 +26,19 @@ output "newrelic_dashboard_url" {
   description = "Link do dashboard de observabilidade, vazio quando desabilitada."
   value       = length(module.observability) > 0 ? module.observability[0].dashboard_permalink : ""
 }
+
+output "sns_topic_arn" {
+  value = module.messaging.sns_topic_arn
+}
+
+output "order_queue_url" {
+  value = module.messaging.order_queue_url
+}
+
+output "stock_queue_url" {
+  value = module.messaging.stock_queue_url
+}
+
+output "billing_queue_url" {
+  value = module.messaging.billing_queue_url
+}

@@ -137,8 +137,17 @@ jobs:
             --name "${{ steps.tf.outputs.cluster_name }}" \
             --region "${{ env.AWS_REGION }}"
 
+<<<<<<< Updated upstream
       - name: Prepare Kustomize overlay
         if: steps.images.outputs.ready == 'true'
+=======
+      # Monolito legado: só com service=api explícito (all = 4 MS).
+      - name: Deploy API (monolito)
+        if: env.DEPLOY_SERVICE == 'api'
+        env:
+          API_ECR: ${{ steps.tf.outputs.api_ecr }}
+          MIGRATIONS_ECR: ${{ steps.tf.outputs.migrations_ecr }}
+>>>>>>> Stashed changes
         run: |
           cd k8s/overlays/prod
           kustomize edit set image \

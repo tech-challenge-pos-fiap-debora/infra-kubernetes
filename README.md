@@ -6,7 +6,13 @@ Mapa da entrega: [arquitetura no `app`](https://github.com/tech-challenge-pos-fi
 
 ## Propósito
 
+<<<<<<< Updated upstream
 Provisiona a infraestrutura Kubernetes da oficina na AWS: VPC, EKS, ECR, ALB Ingress, namespace, secrets da API, Metrics Server, HPA e o módulo New Relic. É o repositório de Terraform do cluster exigido pelo Tech Challenge.
+=======
+Provisiona a infraestrutura Kubernetes da oficina na AWS: VPC, EKS, ECR, ALB Ingress, namespace, secrets da API e dos microsserviços, Metrics Server, HPA e o módulo New Relic. **Não usa Kind** — só EKS.
+
+Microsserviços (overlays `k8s/overlays/prod-*`): `billing`, `stock`, `identity`, `order`. O monolito (`prod` / `service=api`) é legado. Terraform também cria SNS `oficina-domain-events` + filas SQS da saga.
+>>>>>>> Stashed changes
 
 O ambiente vive no AWS Academy Learner Lab. O ritual de sessão (credenciais que expiram) está em [`docs/RUNBOOK-LAB.md`](docs/RUNBOOK-LAB.md).
 
