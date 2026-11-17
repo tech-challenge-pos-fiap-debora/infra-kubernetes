@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/component: order-service
     app.kubernetes.io/part-of: tech-challenge-pos-fiap
 spec:
+  # O EKS não marca nenhuma StorageClass como padrão.
+  storageClassName: gp2
   accessModes:
     - ReadWriteOnce
   resources:

@@ -30,11 +30,20 @@ doc_kind() {
   grep '^kind:' "$1" | head -1 | awk '{print $2}'
 }
 
+doc_name() {
+  grep '^  name:' "$1" | head -1 | awk '{print $2}'
+}
+
+# Deployments de apoio (ex.: order-mongo) sobem antes do Job, que depende deles;
+# só o Deployment do serviço espera a migração terminar.
 for file in "${TMP}"/doc-*; do
   [ -f "${file}" ] || continue
   kind="$(doc_kind "${file}")"
   case "${kind}" in
-    Job|Deployment|HorizontalPodAutoscaler|Ingress) ;;
+    Job|HorizontalPodAutoscaler|Ingress) ;;
+    Deployment)
+      [ "$(doc_name "${file}")" = "${DEPLOYMENT_NAME}" ] || apply_doc "${file}"
+      ;;
     *) apply_doc "${file}" ;;
   esac
 done
