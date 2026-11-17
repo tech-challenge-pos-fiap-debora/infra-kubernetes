@@ -28,9 +28,11 @@ variable "node_instance_types" {
   default = ["t3.small"]
 }
 
+# t3.small comporta 11 pods por node; com kube-system e New Relic, 2 nodes
+# não deixam folga para os 4 microsserviços, jobs de migração e rolling update.
 variable "node_desired_size" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "node_min_size" {
@@ -40,7 +42,7 @@ variable "node_min_size" {
 
 variable "node_max_size" {
   type    = number
-  default = 3
+  default = 4
 }
 
 variable "api_image_tag" {

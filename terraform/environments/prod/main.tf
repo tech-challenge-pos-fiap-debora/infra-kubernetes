@@ -79,7 +79,9 @@ module "observability" {
   alert_email           = var.alert_email
   healthcheck_url       = var.healthcheck_url
 
-  depends_on = [module.eks, module.platform]
+  # O webhook do ALB Controller intercepta todo Service criado no cluster;
+  # o nri-bundle só pode subir depois que os pods do controller estão prontos.
+  depends_on = [module.eks, module.platform, module.alb_ingress]
 }
 
 module "alb_ingress" {
