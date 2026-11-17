@@ -123,10 +123,17 @@ jobs:
           echo "order_seed_ecr=$(terraform output -raw order_seed_ecr_repository_url)" >> "$GITHUB_OUTPUT"
 
       - uses: azure/setup-kubectl@v4
+      # Versão fixa: o install_kustomize.sh consulta a API do GitHub sem token e
+      # baixa uma página de erro quando o runner esbarra no rate limit.
       - name: Instalar kustomize
+        env:
+          KUSTOMIZE_VERSION: v5.8.1
         run: |
-          curl -sS "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
+          curl -fsSL --retry 3 \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /tmp kustomize
+          sudo mv /tmp/kustomize /usr/local/bin/
+          kustomize version
       - name: Configure kubectl
         run: |
           aws eks update-kubeconfig \
