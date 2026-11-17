@@ -1,9 +1,8 @@
 name: Deploy Prod
 
 on:
-  # Temporário: deploy em push de qualquer branch para estabilizar a pipe.
-  # Voltar para `branches: [main]` quando o deploy completo passar.
   push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       service:
