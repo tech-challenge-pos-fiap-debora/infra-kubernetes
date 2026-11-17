@@ -20,7 +20,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: identity-service:migrations
+          image: identity-service-migrations:latest
           imagePullPolicy: Always
           command:
             - node
