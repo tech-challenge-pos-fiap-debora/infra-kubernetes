@@ -112,3 +112,12 @@ resource "aws_eks_addon" "kube_proxy" {
 
   depends_on = [aws_eks_node_group.this]
 }
+
+# A StorageClass gp2 usa o provisionador in-tree, que no EKS só funciona com o
+# driver CSI instalado. Sem IRSA no Learner Lab, o driver usa a LabRole do node.
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name = aws_eks_cluster.this.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  depends_on = [aws_eks_node_group.this]
+}

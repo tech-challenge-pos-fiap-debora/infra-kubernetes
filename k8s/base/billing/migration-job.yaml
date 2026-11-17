@@ -20,7 +20,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: billing-service:migrations
+          image: billing-service-migrations:latest
           imagePullPolicy: Always
           command:
             - node

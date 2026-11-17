@@ -27,7 +27,7 @@ spec:
             - until nc -z order-mongo 27017; do echo "aguardando order-mongo..."; sleep 2; done
       containers:
         - name: seed
-          image: order-service:seed
+          image: order-service-seed:latest
           imagePullPolicy: Always
           command:
             - node
